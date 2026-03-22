@@ -1,6 +1,7 @@
 import { Kindness, CATEGORY_INFO } from '../types'
 import { Lang, t } from '../i18n'
-import { getLikedIds, toggleLike } from '../store'
+import { toggleLike } from '../store'
+import { User } from '@supabase/supabase-js'
 
 interface Props {
   kindness: Kindness
@@ -8,17 +9,20 @@ interface Props {
   onLike: () => void
   lang: Lang
   depth?: number
+  user: User | null
+  likedIds: Set<string>
 }
 
-export default function KindnessCard({ kindness, onReply, onLike, lang, depth = 0 }: Props) {
+export default function KindnessCard({ kindness, onReply, onLike, lang, depth = 0, user, likedIds }: Props) {
   const cat = CATEGORY_INFO[kindness.category]
   const timeAgo = getTimeAgo(kindness.createdAt, lang)
   const catLabel = t(lang, `cat_${kindness.category}`)
-  const isLiked = getLikedIds().has(kindness.id)
+  const isLiked = likedIds.has(kindness.id)
   const description = getDescription(kindness.description, lang)
 
-  const handleLike = () => {
-    toggleLike(kindness.id)
+  const handleLike = async () => {
+    if (!user) return
+    await toggleLike(kindness.id, user.id, isLiked)
     onLike()
   }
 

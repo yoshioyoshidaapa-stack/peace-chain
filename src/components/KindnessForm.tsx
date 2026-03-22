@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { User } from '@supabase/supabase-js'
 import { Kindness, KindnessCategory, CATEGORY_INFO } from '../types'
 import { addKindness } from '../store'
 import { Lang, t } from '../i18n'
@@ -8,21 +9,26 @@ interface Props {
   onPosted: () => void
   onCancel: () => void
   lang: Lang
+  user: User
 }
 
-export default function KindnessForm({ replyTo, onPosted, onCancel, lang }: Props) {
-  const [author, setAuthor] = useState('')
+export default function KindnessForm({ replyTo, onPosted, onCancel, lang, user }: Props) {
+  const defaultName = user.user_metadata?.display_name || user.email?.split('@')[0] || ''
+  const [author, setAuthor] = useState(defaultName)
   const [description, setDescription] = useState('')
   const [category, setCategory] = useState<KindnessCategory>('help')
   const [emoji, setEmoji] = useState('😊')
+  const [submitting, setSubmitting] = useState(false)
 
   const EMOJI_OPTIONS = ['😊', '🤝', '💕', '🌟', '🎁', '☕', '🌸', '🌍', '💬', '🙏', '🎵', '📚']
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!author.trim() || !description.trim()) return
+    if (!author.trim() || !description.trim() || submitting) return
 
-    addKindness(author.trim(), description.trim(), category, emoji, replyTo?.id ?? null)
+    setSubmitting(true)
+    await addKindness(author.trim(), description.trim(), category, emoji, replyTo?.id ?? null, user.id)
+    setSubmitting(false)
     onPosted()
   }
 
@@ -105,8 +111,8 @@ export default function KindnessForm({ replyTo, onPosted, onCancel, lang }: Prop
           <button type="button" className="btn-secondary" onClick={onCancel}>
             {t(lang, 'form_cancel')}
           </button>
-          <button type="submit" className="btn-primary">
-            🕊️ {t(lang, 'form_submit')}
+          <button type="submit" className="btn-primary" disabled={submitting}>
+            🕊️ {submitting ? '...' : t(lang, 'form_submit')}
           </button>
         </div>
       </form>
