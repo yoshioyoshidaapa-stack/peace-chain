@@ -1,6 +1,8 @@
+import { useState, useEffect } from 'react'
 import { Kindness, CATEGORY_INFO } from '../types'
 import { Lang, t } from '../i18n'
 import { toggleLike } from '../store'
+import { translateText } from '../translate'
 import { User } from '@supabase/supabase-js'
 
 interface Props {
@@ -18,7 +20,7 @@ export default function KindnessCard({ kindness, onReply, onLike, lang, depth = 
   const timeAgo = getTimeAgo(kindness.createdAt, lang)
   const catLabel = t(lang, `cat_${kindness.category}`)
   const isLiked = likedIds.has(kindness.id)
-  const description = getDescription(kindness.description, lang)
+  const description = useTranslatedDescription(kindness, lang)
 
   const handleLike = async () => {
     if (!user) return
@@ -60,11 +62,29 @@ export default function KindnessCard({ kindness, onReply, onLike, lang, depth = 
   )
 }
 
-function getDescription(desc: string, lang: Lang): string {
-  if (desc.startsWith('seed_')) {
-    return t(lang, desc)
-  }
-  return desc
+function useTranslatedDescription(kindness: Kindness, lang: Lang): string {
+  const [translated, setTranslated] = useState('')
+
+  useEffect(() => {
+    if (kindness.description.startsWith('seed_')) {
+      setTranslated(t(lang, kindness.description))
+      return
+    }
+    // If same language, no translation needed
+    if (kindness.lang === lang) {
+      setTranslated(kindness.description)
+      return
+    }
+    // Translate user-generated content
+    let cancelled = false
+    setTranslated(kindness.description) // show original while loading
+    translateText(kindness.description, kindness.lang, lang).then(result => {
+      if (!cancelled) setTranslated(result)
+    })
+    return () => { cancelled = true }
+  }, [kindness.description, kindness.lang, lang])
+
+  return translated
 }
 
 function getTimeAgo(dateStr: string, lang: Lang): string {

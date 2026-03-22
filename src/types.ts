@@ -7,6 +7,7 @@ export interface Kindness {
   createdAt: string
   emoji: string
   likes: number
+  lang: string
 }
 
 export type KindnessCategory =

@@ -27,7 +27,7 @@ export default function KindnessForm({ replyTo, onPosted, onCancel, lang, user }
     if (!author.trim() || !description.trim() || submitting) return
 
     setSubmitting(true)
-    await addKindness(author.trim(), description.trim(), category, emoji, replyTo?.id ?? null, user.id)
+    await addKindness(author.trim(), description.trim(), category, emoji, replyTo?.id ?? null, user.id, lang)
     setSubmitting(false)
     onPosted()
   }

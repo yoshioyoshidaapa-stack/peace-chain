@@ -23,6 +23,7 @@ export async function fetchKindnesses(): Promise<Kindness[]> {
     createdAt: row.created_at,
     emoji: row.emoji,
     likes: row.likes,
+    lang: row.lang || 'ja',
   }))
 }
 
@@ -32,7 +33,8 @@ export async function addKindness(
   category: Kindness['category'],
   emoji: string,
   parentId: string | null = null,
-  userId: string
+  userId: string,
+  lang: string = 'ja'
 ): Promise<Kindness | null> {
   const { data, error } = await supabase
     .from('kindnesses')
@@ -43,6 +45,7 @@ export async function addKindness(
       emoji,
       parent_id: parentId,
       user_id: userId,
+      lang,
     })
     .select()
     .single()
@@ -61,6 +64,7 @@ export async function addKindness(
     createdAt: data.created_at,
     emoji: data.emoji,
     likes: data.likes,
+    lang: data.lang || 'ja',
   }
 }
 

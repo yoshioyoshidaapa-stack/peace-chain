@@ -1,5 +1,7 @@
+import { useState, useEffect } from 'react'
 import { Kindness } from '../types'
 import { Lang, t } from '../i18n'
+import { translateText } from '../translate'
 
 interface Props {
   kindnesses: Kindness[]
@@ -20,21 +22,42 @@ export default function Ranking({ kindnesses, lang }: Props) {
     <div className="ranking">
       <h2 className="ranking-title">🏆 {t(lang, 'ranking_title')}</h2>
       <div className="ranking-list">
-        {top3.map((k, i) => {
-          const desc = k.description.startsWith('seed_') ? t(lang, k.description) : k.description
-          return (
-            <div key={k.id} className="ranking-item">
-              <span className="ranking-medal">{medals[i]}</span>
-              <span className="ranking-emoji">{k.emoji}</span>
-              <div className="ranking-info">
-                <strong>{k.author}</strong>
-                <p>{desc}</p>
-              </div>
-              <span className="ranking-likes">❤️ {k.likes}</span>
-            </div>
-          )
-        })}
+        {top3.map((k, i) => (
+          <RankingRow key={k.id} kindness={k} medal={medals[i]} lang={lang} />
+        ))}
       </div>
+    </div>
+  )
+}
+
+function RankingRow({ kindness, medal, lang }: { kindness: Kindness; medal: string; lang: Lang }) {
+  const [desc, setDesc] = useState(kindness.description)
+
+  useEffect(() => {
+    if (kindness.description.startsWith('seed_')) {
+      setDesc(t(lang, kindness.description))
+      return
+    }
+    if (kindness.lang === lang) {
+      setDesc(kindness.description)
+      return
+    }
+    let cancelled = false
+    translateText(kindness.description, kindness.lang, lang).then(result => {
+      if (!cancelled) setDesc(result)
+    })
+    return () => { cancelled = true }
+  }, [kindness.description, kindness.lang, lang])
+
+  return (
+    <div className="ranking-item">
+      <span className="ranking-medal">{medal}</span>
+      <span className="ranking-emoji">{kindness.emoji}</span>
+      <div className="ranking-info">
+        <strong>{kindness.author}</strong>
+        <p>{desc}</p>
+      </div>
+      <span className="ranking-likes">❤️ {kindness.likes}</span>
     </div>
   )
 }
